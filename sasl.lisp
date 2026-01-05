@@ -23,7 +23,7 @@
   (send-irc-message connection "CAP REQ" "sasl")
   (add-hook connection 'irc-cap-message
             (lambda (message)
-              (assert (equal (arguments message) '("*" "ACK" "sasl ")))
+              (assert (equal (arguments message) '("*" "ACK" "sasl")))
               (send-irc-message connection "AUTHENTICATE PLAIN")))
   (add-hook connection 'irc-authenticate-message
             (lambda (message)
