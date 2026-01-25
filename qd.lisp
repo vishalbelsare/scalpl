@@ -221,58 +221,61 @@
                       magic             ; if you have to ask, you'll never know
                       &aux (acc 0.0) (share 0) (others (copy-list foreigners))
                         (asset (consumed-asset (first others))))
-  (do* ((remaining-offers others (rest remaining-offers))
-        (processed-tally    0    (1+   processed-tally)))
-       ((or (null remaining-offers)  ; EITHER: processed entire order book
-            ()                       ;  TODO : passed over enough liquidity
-            (and (> acc resilience)  ;     OR:   BOTH: processed past resilience
-                 (> processed-tally max-orders))) ; AND: at maximal order count
-        (flet ((pick (count offers)
-                 (sort (subseq* (sort (or (subseq offers 0 (1- processed-tally))
-                                          (warn ";;DEPTH; charge? [ ~A ]"
-                                                (cdar (last offers)))
-                                          offers)
-                                      #'> :key (lambda (x) (volume (cdr x))))
-                                0 count)
-                       #'< :key (lambda (x) (price (cdr x)))))
-               (offer-scaler (total bonus count)
-                 (let ((scale (/ funds (+ total (* bonus count)))))
-                   (lambda (order &aux (vol (* scale (+ bonus (car order)))))
-                     (with-slots (market price) (cdr order)
-                       (make-instance
-                        'offer
-                        :given (cons-aq* asset vol)
-                        :volume vol :market market
-                        :price (with-slots (tick decimals) market
-                                 (alet (if (slot-boundp market 'tick)
-                                           (* tick (expt 10 decimals))
-                                           1)
-                                   (- price
-                                      (* (if (> max-orders (expt magic magic))
-                                             (1+ (random magic)) 1)
-                                         it))))))))))
-          (let* ((target-count (min (floor (/ funds epsilon 4/3)) ; ygni! wut?
-                                    max-orders processed-tally))
-                 (chosen-stairs         ; the (shares . foreign-offer)s to fight
-                  (if (>= magic target-count) (pick target-count others)
-                      (cons (first others)
-                            (pick (1- target-count) (rest others)))))
-                 (total-shares (reduce #'+ (mapcar #'car chosen-stairs)))
-                 ;; we need the smallest order to be epsilon
-                 (e/f (/ epsilon funds))
-                 (bonus (if (>= 1 target-count) 0
-                            (/ (- (* e/f total-shares) (caar chosen-stairs))
-                               (- 1 (* e/f target-count))))))
-            (break-errors (not division-by-zero) ; dbz = no funds left, too bad
-              (mapcar (offer-scaler total-shares bonus target-count)
-                      chosen-stairs)))))
-    ;; DONT use callbacks for liquidity distribution control
-    ;; DONT forget why Let Over Lambda was named how it was!
-    (with-slots (volume) (first remaining-offers)
-      ;; BLESSED RNGESUS SHALLOWLY THY BLAME !!!
-      (push (incf share (/ (incf acc volume) 5/7))
-            ;; THY'ZDROVYE,MINE;GZUNDHYT
-            (first remaining-offers)))))
+  (flet ((label (garbage) ; this local function dedicated to... 1st SCUBA buddy
+           (with-simple-restart (continue "undeterred scalpling!")
+             (warn ";;L0!~A ~A"
+                   (format-timestring () (now) :format +iso-8601-time-format+)
+                   (cdar (last garbage))))))
+    (do* ((remaining-offers others (rest remaining-offers))
+          (processed-tally    0    (1+   processed-tally)))
+         ((or (null remaining-offers)  ; EITHER: processed entire order book
+              ()                       ;  TODO : passed over enough liquidity
+              (and (> acc resilience)  ;     OR:   BOTH: processed past resilience
+                   (> processed-tally max-orders))) ; AND: at maximal order count
+          (flet ((pick (count offers)
+                   (sort (subseq* (sort (or (subseq offers 0 (1- processed-tally))
+                                            (label offers) offers)
+                                        #'> :key (lambda (x) (volume (cdr x))))
+                                  0 count)
+                         #'< :key (lambda (x) (price (cdr x)))))
+                 (offer-scaler (total bonus count)
+                   (let ((scale (/ funds (+ total (* bonus count)))))
+                     (lambda (order &aux (vol (* scale (+ bonus (car order)))))
+                       (with-slots (market price) (cdr order)
+                         (make-instance
+                          'offer
+                          :given (cons-aq* asset vol)
+                          :volume vol :market market
+                          :price (with-slots (tick decimals) market
+                                   (alet (if (slot-boundp market 'tick)
+                                             (* tick (expt 10 decimals))
+                                             1)
+                                     (- price
+                                        (* (if (> max-orders (expt magic magic))
+                                               (1+ (random magic)) 1)
+                                           it))))))))))
+            (let* ((target-count (min (floor (/ funds epsilon 4/3)) ; ygni! wut?
+                                      max-orders processed-tally))
+                   (chosen-stairs         ; the (shares . foreign-offer)s to fight
+                     (if (>= magic target-count) (pick target-count others)
+                         (cons (first others)
+                               (pick (1- target-count) (rest others)))))
+                   (total-shares (reduce #'+ (mapcar #'car chosen-stairs)))
+                   ;; we need the smallest order to be epsilon
+                   (e/f (/ epsilon funds))
+                   (bonus (if (>= 1 target-count) 0
+                              (/ (- (* e/f total-shares) (caar chosen-stairs))
+                                 (- 1 (* e/f target-count))))))
+              (break-errors (not division-by-zero) ; dbz = no funds left, too bad
+                (mapcar (offer-scaler total-shares bonus target-count)
+                        chosen-stairs)))))
+      ;; DONT use callbacks for liquidity distribution control
+      ;; DONT forget why Let Over Lambda was named how it was!
+      (with-slots (volume) (first remaining-offers)
+        ;; BLESSED RNGESUS SHALLOWLY THY BLAME !!!
+        (push (incf share (/ (incf acc volume) 5/7))
+              ;; THY'ZDROVYE,MINE;GZUNDHYT
+              (first remaining-offers))))))
 
 (defclass ope-scalper (parent)
   ((input :initform (make-instance 'channel))

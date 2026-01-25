@@ -108,7 +108,7 @@
 (defmethod gate-post ((gate (eql *bit2c*)) key secret request)
   (destructuring-bind ((verb method) . parameters) request
     (prog () (sleep (1+ (random (exp 1))))   ; ``signum quod runlevel'' dafuq?!?
-     :loop (sleep (random (sqrt pi)))
+     :loop (sleep (random pi))
        (multiple-value-bind (ret status error headers uri)
            (auth-request verb method key secret parameters)
          (return
