@@ -92,7 +92,7 @@
     (awhen (recv (control actor) :blockp blockp) (execute actor it)))
   (:method :around ((actor actor) &key)
     (restart-case (call-next-method)
-      (abort () :report "Abort request, restart actor")))
+      (abort () :report "Abort request; cleanly unqueues actor")))
   (:method :after ((actor actor) &key)
     ;; why is this one obvious and no proof necessary?
     (push (enqueue actor) (slot-value actor 'tasks))))
