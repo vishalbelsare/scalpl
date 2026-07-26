@@ -34,9 +34,9 @@ have a bad time if you rely on the source code without reading it, aloud!
 Reports of roughness and density have been greatly adjagitated; thus, if you
 have suggestions for [theme](https://www.youtube.com/watch?v=NCIUf8eYPqA)
 [songs](https://www.youtube.com/watch?v=6D6cw8Ob2sk), [please speak, and go
-softly?](youtube.com/watch?v=rGB9T17tBHo) now your professional commendation
-and you encourage me to reconsider whether music is only a part of nature;
-the imposition from without of order upon chaos.
+softly?](https://youtube.com/watch?v=rGB9T17tBHo) now your professional
+commendation and you encourage me to reconsider whether music is only
+a part of nature; the imposition from without of order upon chaos.
 
 # Abstract
 
